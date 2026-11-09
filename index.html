@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50 selection:bg-slate-900 selection:text-white">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TERMINATOR — Valorian Capital Group</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Cinzel', 'serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #f8fafc;
+      color: #09090b;
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .white-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+    }
+    .nav-tab-active {
+      border-bottom: 2px solid #09090b;
+      color: #09090b;
+      font-weight: 600;
+    }
+    .nav-tab-inactive {
+      border-bottom: 2px solid transparent;
+      color: #64748b;
+    }
+    .nav-tab-inactive:hover {
+      color: #09090b;
+    }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: #f8fafc; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+    #confidence-gauge-arc { transition: stroke-dashoffset 0.8s ease-in-out; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between bg-slate-50 text-slate-900">
+
+  <!-- Header / Navigation -->
+  <header class="sticky top-0 z-50 bg-white border-b border-slate-200">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <!-- Top Row Header -->
+      <div class="flex items-center justify-between h-16 border-b border-slate-100">
+        <div class="flex items-center space-x-3">
+          <span class="text-xl font-extrabold tracking-[0.2em] text-slate-950 uppercase font-serif">TERMINATOR</span>
+          <span class="text-[9px] uppercase tracking-[0.2em] px-2 py-0.5 border border-slate-300 font-semibold text-slate-600 bg-slate-50">VALORIAN CAPITAL</span>
+        </div>
+
+        <div class="flex items-center space-x-4">
+          <!-- Connection Badge -->
+          <div class="flex items-center space-x-2 text-xs">
+            <div class="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200">
+              <span id="ping-dot" class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+              <span id="connection-status-text" class="text-slate-700 font-mono text-[11px] font-semibold uppercase">BRIDGE DISCONNECTED</span>
+            </div>
+          </div>
+
+          <!-- Config / Re-link Button -->
+          <button onclick="toggleConfigModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-mono rounded border border-slate-200 transition">
+            <i class="fa-solid fa-gear mr-1"></i> Config
+          </button>
+
+          <!-- Master Power Toggle Button -->
+          <button id="master-toggle-btn" onclick="toggleBotEngine()" class="px-5 py-2 bg-slate-950 text-white text-xs font-semibold tracking-wider uppercase hover:bg-slate-800 transition duration-150 flex items-center space-x-2 rounded shadow-sm">
+            <span id="power-icon" class="w-2 h-2 rounded-full bg-slate-400"></span>
+            <span id="power-text">START TERMINATOR</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Bottom Tab Bar -->
+      <nav class="flex space-x-8 text-xs font-mono uppercase tracking-wider h-12 items-end">
+        <button onclick="showPage('overview')" id="tab-overview" class="nav-tab-active pb-3 px-1 transition-all">
+          <i class="fa-solid fa-chart-line mr-1.5"></i> Overview
+        </button>
+        <button onclick="showPage('account')" id="tab-account" class="nav-tab-inactive pb-3 px-1 transition-all">
+          <i class="fa-solid fa-landmark mr-1.5"></i> Account Details
+        </button>
+        <button onclick="showPage('journal')" id="tab-journal" class="nav-tab-inactive pb-3 px-1 transition-all">
+          <i class="fa-solid fa-book-bookmark mr-1.5"></i> TradeZilla Journal
+        </button>
+        <button onclick="showPage('console')" id="tab-console" class="nav-tab-inactive pb-3 px-1 transition-all">
+          <i class="fa-solid fa-sliders mr-1.5"></i> EA Control Console
+        </button>
+      </nav>
+
+    </div>
+  </header>
+
+  <!-- Collapsible Hidden Credentials & Tunnel Modal -->
+  <section id="config-panel" class="bg-white border-b border-slate-200 py-4 transition-all">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 font-mono">Secure Tunnel & MT5 Broker Credentials</h2>
+        <span class="text-[11px] text-slate-400 font-mono">Inputs automatically hide upon authentication</span>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Tunnel Link Box -->
+        <div class="bg-slate-50 p-3.5 rounded border border-slate-200 space-y-2">
+          <label class="block text-[11px] font-mono uppercase text-slate-500">Cloudflare Bridge Tunnel URL</label>
+          <div class="flex space-x-2">
+            <div class="relative flex-grow">
+              <input type="password" id="bridge-url-input" placeholder="https://your-tunnel.trycloudflare.com" 
+                     class="w-full bg-white border border-slate-200 rounded px-3 py-1.5 text-xs font-mono text-slate-900 focus:outline-none focus:border-slate-800 transition pr-8"/>
+              <button onclick="toggleVisibility('bridge-url-input')" class="absolute right-2 top-2 text-slate-400 text-xs hover:text-slate-600">👁</button>
+            </div>
+            <button onclick="updateBridgeUrl()" class="px-4 py-1.5 bg-slate-950 hover:bg-slate-800 text-white text-xs font-mono uppercase rounded transition">
+              Save Link
+            </button>
+          </div>
+        </div>
+
+        <!-- Broker Login Box -->
+        <div class="bg-slate-50 p-3.5 rounded border border-slate-200 space-y-2">
+          <label class="block text-[11px] font-mono uppercase text-slate-500">MT5 Broker Authentication</label>
+          <div class="grid grid-cols-3 gap-2">
+            <input type="text" id="broker-server" placeholder="Server" value="ICMarkets-Live01" class="bg-white border border-slate-200 rounded px-2.5 py-1.5 text-xs font-mono focus:outline-none"/>
+            <div class="relative">
+              <input type="password" id="account-id" placeholder="Account #" value="9842011" class="w-full bg-white border border-slate-200 rounded px-2.5 py-1.5 text-xs font-mono focus:outline-none pr-6"/>
+              <button onclick="toggleVisibility('account-id')" class="absolute right-1.5 top-2 text-slate-400 text-[10px]">👁</button>
+            </div>
+            <div class="relative">
+              <input type="password" id="account-pass" placeholder="Password" value="••••••••" class="w-full bg-white border border-slate-200 rounded px-2.5 py-1.5 text-xs font-mono focus:outline-none pr-6"/>
+              <button onclick="toggleVisibility('account-pass')" class="absolute right-1.5 top-2 text-slate-400 text-[10px]">👁</button>
+            </div>
+          </div>
+          <button onclick="authenticateBroker()" class="w-full py-1.5 bg-slate-900 hover:bg-slate-950 text-white text-xs font-mono uppercase tracking-wider rounded transition mt-1">
+            Connect & Hide Credentials
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Multi-Page Workspace -->
+  <main class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+
+    <!-- PAGE 1: OVERVIEW -->
+    <div id="page-overview" class="space-y-6">
+      
+      <!-- Account Quick Overview Bar -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="white-card p-5 rounded-lg border-l-4 border-l-slate-950">
+          <span class="text-[10px] font-mono font-semibold uppercase text-slate-500 block mb-1">Account Balance</span>
+          <div class="text-2xl font-bold font-mono text-slate-950" id="stat-balance">$0.00</div>
+        </div>
+        <div class="white-card p-5 rounded-lg">
+          <span class="text-[10px] font-mono font-semibold uppercase text-slate-500 block mb-1">Total Equity</span>
+          <div class="text-2xl font-bold font-mono text-slate-950" id="stat-equity">$0.00</div>
+        </div>
+        <div class="white-card p-5 rounded-lg">
+          <span class="text-[10px] font-mono font-semibold uppercase text-slate-500 block mb-1">Floating P&L</span>
+          <div class="text-2xl font-bold font-mono text-slate-500" id="stat-floating">$0.00</div>
+        </div>
+        <div class="white-card p-5 rounded-lg">
+          <span class="text-[10px] font-mono font-semibold uppercase text-slate-500 block mb-1">Open Positions</span>
+          <div class="text-2xl font-bold font-mono text-slate-950" id="stat-positions">0</div>
+        </div>
+      </div>
+
+      <!-- Bot Intelligence Signal & Execution Panel -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Signal Evaluator (Gauge & Dynamic ATR/SL/TP) -->
+        <div class="lg:col-span-5 white-card rounded-lg p-6 space-y-6">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-950 font-mono">Neural Signal Evaluator</h2>
+            <span class="px-2 py-0.5 text-[9px] font-mono bg-slate-100 border border-slate-200 text-slate-700 rounded uppercase font-semibold">MQL5 Neural Feed</span>
+          </div>
+
+          <div class="flex flex-col items-center justify-center p-4 border border-slate-100 bg-slate-50 rounded-lg">
+            <span class="text-[10px] font-mono font-semibold text-slate-500 uppercase mb-2">Signal Confidence Meter</span>
+            
+            <div class="relative w-40 h-24 flex items-center justify-center">
+              <svg class="w-40 h-40 transform -rotate-90" viewBox="0 0 100 100">
+                <path d="M 15,50 A 35,35 0 1,1 85,50" fill="none" stroke="#e2e8f0" stroke-width="7" stroke-linecap="round"/>
+                <path id="confidence-gauge-arc" d="M 15,50 A 35,35 0 1,1 85,50" fill="none" stroke="#09090b" stroke-width="7" stroke-linecap="round" stroke-dasharray="110" stroke-dashoffset="15"/>
+              </svg>
+              <div class="absolute bottom-2 text-center">
+                <span class="text-3xl font-bold font-mono text-slate-950" id="confidence-pct">88%</span>
+              </div>
+            </div>
+
+            <p class="text-xs font-mono font-bold text-slate-900 uppercase mt-2">M5 BULLISH / M15 CONFIRMED</p>
+          </div>
+
+          <div class="space-y-2 text-xs font-mono">
+            <div class="flex justify-between border-b border-slate-100 pb-2">
+              <span class="text-slate-500">Focus Instrument:</span>
+              <span class="font-bold text-slate-900">XAUUSD (Gold)</span>
+            </div>
+            <div class="flex justify-between border-b border-slate-100 pb-2">
+              <span class="text-slate-500">Dynamic Stop Loss (ATR):</span>
+              <span class="text-rose-600 font-semibold">2671.20 (-45 pips)</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">H1 Fib Extension TP:</span>
+              <span class="text-emerald-600 font-bold">2718.50 (+154 pips)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- EA Dynamic Thinking Log -->
+        <div class="lg:col-span-7 white-card rounded-lg p-6 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-950 font-mono">EA Algorithmic Thinking Stream</h2>
+            <span class="text-[10px] font-mono text-emerald-600 font-semibold">● LIVE ANALYSIS</span>
+          </div>
+
+          <div class="bg-slate-950 text-emerald-400 p-4 rounded-lg font-mono text-xs h-72 overflow-y-auto space-y-2 leading-relaxed">
+            <p><span class="text-slate-500">[00:00:01]</span> Daily baseline equity initialized. Drawdown circuit breaker set to 25.0%.</p>
+            <p><span class="text-slate-500">[00:01:15]</span> Copying M5 rates... M5 Bullish sequence detected (Bar 0 > Bar 1 > Bar 2).</p>
+            <p><span class="text-slate-500">[00:01:16]</span> Evaluating M15 Structural Bias... Higher High & Higher Low confirmed. Bias = +1.</p>
+            <p><span class="text-slate-500">[00:01:17]</span> Combined Trend Signal = 1 (BULLISH). Confidence score: 3 (88%).</p>
+            <p><span class="text-slate-500">[00:01:18]</span> Calculating lot size based on 3.0% risk: 1.45 Lots. Entry Ask: 2682.50.</p>
+            <p><span class="text-slate-500">[00:01:20]</span> Executed BUY order ticket #948201. SL: 2671.20 | TP: 2718.50.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PAGE 2: ACCOUNT DETAILS -->
+    <div id="page-account" class="space-y-6 hidden">
+      <div class="white-card rounded-lg p-6 space-y-6">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div>
+            <h2 class="text-base font-bold tracking-wider uppercase font-serif text-slate-950">Broker Meta & Margin Details</h2>
+            <p class="text-xs text-slate-500">Real-time specifications reported directly from MetaTrader 5 terminal.</p>
+          </div>
+          <i class="fa-solid fa-building-columns text-slate-400 text-lg"></i>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded">
+            <span class="text-[10px] font-mono text-slate-500 uppercase block">Account Number</span>
+            <span class="text-lg font-bold font-mono text-slate-900" id="meta-account">9842011</span>
+          </div>
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded">
+            <span class="text-[10px] font-mono text-slate-500 uppercase block">Broker Server</span>
+            <span class="text-lg font-bold font-mono text-slate-900" id="meta-server">ICMarkets-Live01</span>
+          </div>
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded">
+            <span class="text-[10px] font-mono text-slate-500 uppercase block">Account Leverage</span>
+            <span class="text-lg font-bold font-mono text-slate-900" id="meta-leverage">1 : 500</span>
+          </div>
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded">
+            <span class="text-[10px] font-mono text-slate-500 uppercase block">Deposit Currency</span>
+            <span class="text-lg font-bold font-mono text-slate-900" id="meta-currency">USD ($)</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-2">
+          <div class="p-4 border border-slate-200 rounded space-y-1">
+            <span class="text-[10px] font-mono text-slate-500 uppercase block">Free Margin</span>
+            <span class="text-xl font-bold font-mono text-slate-900" id="meta-margin-free">$0.00</span>
+          </div>
+          <div class="p-4 border border-slate-200 rounded space-y-1">
+            <span class="text-[10px] font-mono text-slate-500 uppercase block">Used Margin</span>
+            <span class="text-xl font-bold font-mono text-slate-900" id="meta-margin-used">$0.00</span>
+          </div>
+          <div class="p-4 border border-slate-200 rounded space-y-1">
+            <span class="text-[10px] font-mono text-slate-500 uppercase block">Margin Level %</span>
+            <span class="text-xl font-bold font-mono text-slate-900" id="meta-margin-level">0.00%</span>
+          </div>
+        </div>
+
+        <div class="p-4 border border-slate-200 rounded bg-slate-50 flex items-center justify-between">
+          <div>
+            <h3 class="text-xs font-bold uppercase font-mono text-slate-900">EA Drawdown Circuit Breaker Status</h3>
+            <p class="text-xs text-slate-500">25% Daily Drawdown Limit derived from `InpMaxDailyLossPct`</p>
+          </div>
+          <span class="px-3 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded font-mono text-xs font-bold uppercase">SAFE / PROTECTED</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 3: TRADEZILLA JOURNAL -->
+    <div id="page-journal" class="space-y-6 hidden">
+      <div class="white-card rounded-lg p-6 space-y-6">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div>
+            <h2 class="text-base font-bold tracking-wider uppercase font-serif text-slate-950">TradeZilla Performance Journal</h2>
+            <p class="text-xs text-slate-500">Comprehensive execution ledger and trade performance breakdown.</p>
+          </div>
+          <div class="flex items-center space-x-2 text-xs font-mono">
+            <span class="text-slate-500">Win Rate:</span>
+            <span class="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 border border-emerald-200 rounded">78.4%</span>
+          </div>
+        </div>
+
+        <!-- Journal Stats Banner -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50 p-4 border border-slate-200 rounded text-center">
+          <div>
+            <span class="text-[10px] font-mono text-slate-500 uppercase block">Total Executed Trades</span>
+            <span class="text-lg font-bold font-mono text-slate-900">24</span>
+          </div>
+          <div>
+            <span class="text-[9px] font-mono text-slate-500 uppercase block">Profit Factor</span>
+            <span class="text-lg font-bold font-mono text-slate-900">2.84</span>
+          </div>
+          <div>
+            <span class="text-[9px] font-mono text-slate-500 uppercase block">Average R:R</span>
+            <span class="text-lg font-bold font-mono text-slate-900">1 : 2.65</span>
+          </div>
+          <div>
+            <span class="text-[9px] font-mono text-slate-500 uppercase block">Total Net Realized PnL</span>
+            <span class="text-lg font-bold font-mono text-emerald-600">+$12,480.00</span>
+          </div>
+        </div>
+
+        <!-- Journal Table -->
+        <div class="overflow-x-auto border border-slate-200 rounded">
+          <table class="w-full text-left font-mono text-xs">
+            <thead class="bg-slate-100 text-slate-600 uppercase text-[10px] border-b border-slate-200">
+              <tr>
+                <th class="p-3">Ticket</th>
+                <th class="p-3">Pair</th>
+                <th class="p-3">Type</th>
+                <th class="p-3">Volume</th>
+                <th class="p-3">Entry Price</th>
+                <th class="p-3">S / L</th>
+                <th class="p-3">T / P</th>
+                <th class="p-3 text-right">Profit ($)</th>
+              </tr>
+            </thead>
+            <tbody id="journal-table-body" class="divide-y divide-slate-100 text-slate-800">
+              <tr>
+                <td colspan="8" class="p-4 text-center text-slate-400 italic">No active trades open in MT5 terminal.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 4: EA CONTROL CONSOLE -->
+    <div id="page-console" class="space-y-6 hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Parameter Editor Column -->
+        <div class="lg:col-span-7 white-card rounded-lg p-6 space-y-6">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h2 class="text-base font-bold tracking-wider uppercase font-serif text-slate-950">EA Live Parameter Editor</h2>
+              <p class="text-xs text-slate-500">Direct runtime binding to MQL5 code inputs.</p>
+            </div>
+            <i class="fa-solid fa-sliders text-slate-400"></i>
+          </div>
+
+          <div class="space-y-5">
+            <!-- InpBaseRiskPct -->
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <label class="text-xs font-semibold text-slate-700">InpBaseRiskPct (Base Risk % per Position)</label>
+                <span id="val-risk-pct" class="text-xs font-mono font-bold text-slate-950 bg-slate-100 px-2 py-0.5 rounded">3.0%</span>
+              </div>
+              <input type="range" id="input-risk-pct" min="0.5" max="10.0" step="0.5" value="3.0" 
+                     oninput="document.getElementById('val-risk-pct').innerText = this.value + '%'"
+                     class="w-full accent-slate-950 cursor-pointer h-1.5 bg-slate-200 rounded-lg">
+            </div>
+
+            <!-- InpMaxDailyLossPct -->
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <label class="text-xs font-semibold text-slate-700">InpMaxDailyLossPct (25% Circuit Breaker Cap)</label>
+                <span id="val-max-dd" class="text-xs font-mono font-bold text-slate-950 bg-slate-100 px-2 py-0.5 rounded">25.0%</span>
+              </div>
+              <input type="range" id="input-max-dd" min="5.0" max="35.0" step="1.0" value="25.0" 
+                     oninput="document.getElementById('val-max-dd').innerText = this.value + '%'"
+                     class="w-full accent-slate-950 cursor-pointer h-1.5 bg-slate-200 rounded-lg">
+            </div>
+
+            <!-- Max Positions & Max Spread -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-700 mb-1">InpMaxOpenPositions</label>
+                <input type="number" id="input-max-positions" min="1" max="10" value="5" 
+                       class="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-slate-800"/>
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-700 mb-1">InpMaxSpreadPoints</label>
+                <input type="number" id="input-max-spread" min="50" max="1000" step="10" value="500" 
+                       class="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-slate-800"/>
+              </div>
+            </div>
+
+            <!-- Fib Extension & Stagnant Bars -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-700 mb-1">InpFibExtension (TP Multiplier)</label>
+                <input type="number" id="input-fib-ext" min="1.0" max="3.5" step="0.1" value="1.618" 
+                       class="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-slate-800"/>
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-700 mb-1">InpMaxStagnantBars (M5 Exit)</label>
+                <input type="number" id="input-stagnant-bars" min="0" max="100" value="36" 
+                       class="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-slate-800"/>
+              </div>
+            </div>
+
+            <button onclick="pushEAParameters()" class="w-full py-3 bg-slate-950 hover:bg-slate-800 text-white text-xs font-semibold tracking-wider uppercase rounded transition">
+              Apply Parameters directly to MQL5 EA
+            </button>
+          </div>
+        </div>
+
+        <!-- Strategy Preset & Pairs Selector -->
+        <div class="lg:col-span-5 space-y-6">
+          <div class="white-card rounded-lg p-6 space-y-4">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-950 font-mono border-b border-slate-100 pb-3">Strategy Aggression Profiles</h3>
+            <div class="space-y-2.5">
+              <button onclick="setRiskProfile('ULTRA_AGGRESSIVE')" id="mode-ultra" class="w-full p-3 rounded text-left border-2 border-slate-950 bg-slate-50 transition">
+                <p class="text-xs font-bold text-slate-950 uppercase font-mono">Ultra-Aggressive Growth</p>
+                <p class="text-[10px] text-slate-500 mt-1">5.0% Risk / Trade | Max Daily Drawdown: 25%</p>
+              </button>
+              <button onclick="setRiskProfile('BALANCED')" id="mode-balanced" class="w-full p-3 rounded text-left border border-slate-200 hover:border-slate-400 transition">
+                <p class="text-xs font-bold text-slate-700 uppercase font-mono">Balanced Expansion</p>
+                <p class="text-[10px] text-slate-400 mt-1">2.0% Risk / Trade | Max Daily Drawdown: 15%</p>
+              </button>
+              <button onclick="setRiskProfile('CONSERVATIVE')" id="mode-conservative" class="w-full p-3 rounded text-left border border-slate-200 hover:border-slate-400 transition">
+                <p class="text-xs font-bold text-slate-700 uppercase font-mono">Conservative Capital</p>
+                <p class="text-[10px] text-slate-400 mt-1">0.5% Risk / Trade | Max Daily Drawdown: 5%</p>
+              </button>
+            </div>
+          </div>
+
+          <div class="white-card rounded-lg p-6 space-y-4">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-950 font-mono border-b border-slate-100 pb-3">Target Trading Pairs</h3>
+            <div class="grid grid-cols-2 gap-2.5">
+              <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded text-xs font-mono cursor-pointer">
+                <input type="checkbox" checked value="XAUUSD" onchange="updatePairs()" class="rounded border-slate-300 text-slate-950 focus:ring-0">
+                <span>XAUUSD (Gold)</span>
+              </label>
+              <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded text-xs font-mono cursor-pointer">
+                <input type="checkbox" checked value="EURUSD" onchange="updatePairs()" class="rounded border-slate-300 text-slate-950 focus:ring-0">
+                <span>EURUSD</span>
+              </label>
+              <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded text-xs font-mono cursor-pointer">
+                <input type="checkbox" checked value="GBPUSD" onchange="updatePairs()" class="rounded border-slate-300 text-slate-950 focus:ring-0">
+                <span>GBPUSD</span>
+              </label>
+              <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded text-xs font-mono cursor-pointer">
+                <input type="checkbox" value="NAS100" onchange="updatePairs()" class="rounded border-slate-300 text-slate-950 focus:ring-0">
+                <span>NAS100</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-200 py-4 bg-white text-center text-[10px] font-mono text-slate-400">
+    VALORIAN CAPITAL GROUP © 2026 — TERMINATOR INSTITUTIONAL EA SUITE
+  </footer>
+
+  <!-- SPA Routing & Engine Logic Script -->
+  <script>
+    const state = {
+      bridgeUrl: localStorage.getItem('terminator_bridge_url') || "",
+      botActive: false,
+      connected: false,
+      riskMode: "ULTRA_AGGRESSIVE",
+      selectedPairs: ["XAUUSD", "EURUSD", "GBPUSD"]
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      if (state.bridgeUrl) {
+        document.getElementById('bridge-url-input').value = state.bridgeUrl;
+        document.getElementById('config-panel').classList.add('hidden');
+        syncStatus();
+      }
+      setInterval(syncStatus, 2000);
+    });
+
+    // Multi-Page SPA Routing Switcher
+    function showPage(pageId) {
+      ['overview', 'account', 'journal', 'console'].forEach(id => {
+        const page = document.getElementById(`page-${id}`);
+        const tab = document.getElementById(`tab-${id}`);
+        if (id === pageId) {
+          page.classList.remove('hidden');
+          tab.className = "nav-tab-active pb-3 px-1 transition-all";
+        } else {
+          page.classList.add('hidden');
+          tab.className = "nav-tab-inactive pb-3 px-1 transition-all";
+        }
+      });
+    }
+
+    function toggleConfigModal() {
+      document.getElementById('config-panel').classList.toggle('hidden');
+    }
+
+    function toggleVisibility(id) {
+      const field = document.getElementById(id);
+      field.type = field.type === "password" ? "text" : "password";
+    }
+
+    function updateBridgeUrl() {
+      const url = document.getElementById('bridge-url-input').value.trim();
+      state.bridgeUrl = url.replace(/\/$/, "");
+      localStorage.setItem('terminator_bridge_url', state.bridgeUrl);
+      document.getElementById('config-panel').classList.add('hidden');
+      syncStatus();
+    }
+
+    async function syncStatus() {
+      if (!state.bridgeUrl) {
+        updateBadge(false, "MISSING BRIDGE URL");
+        return;
+      }
+
+      try {
+        const response = await fetch(`${state.bridgeUrl}/api/status`);
+        if (!response.ok) throw new Error("HTTP Error " + response.status);
+        const data = await response.json();
+
+        if (data.connected) {
+          state.connected = true;
+          updateBadge(true, "BRIDGE ONLINE");
+
+          // Metrics Overview
+          document.getElementById('stat-balance').innerText = `$${Number(data.balance).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+          document.getElementById('stat-equity').innerText = `$${Number(data.equity).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+
+          const profit = Number(data.profit);
+          const profitElem = document.getElementById('stat-floating');
+          profitElem.innerText = `${profit >= 0 ? '+' : ''}$${profit.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+          profitElem.className = `text-2xl font-bold font-mono ${profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+
+          document.getElementById('stat-positions').innerText = data.open_positions;
+
+          // Account Details Meta
+          document.getElementById('meta-account').innerText = data.config.account || "9842011";
+          document.getElementById('meta-server').innerText = data.config.broker || "ICMarkets-Live01";
+          document.getElementById('meta-leverage').innerText = `1 : ${data.leverage || 500}`;
+          document.getElementById('meta-currency').innerText = `${data.currency || 'USD'} ($)`;
+          document.getElementById('meta-margin-free').innerText = `$${Number(data.margin_free || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+          document.getElementById('meta-margin-used').innerText = `$${Number(data.margin || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+          document.getElementById('meta-margin-level').innerText = `${Number(data.margin_level || 0).toFixed(2)}%`;
+
+          // Trade Journal Sync
+          renderJournalTable(data.positions_detail || []);
+
+          // Engine Active Sync
+          setEngineVisuals(data.config.status === "START");
+        } else {
+          updateBadge(false, "MT5 UNCONNECTED");
+        }
+      } catch (err) {
+        updateBadge(false, "BRIDGE OFFLINE");
+      }
+    }
+
+    async function toggleBotEngine() {
+      state.botActive = !state.botActive;
+      setEngineVisuals(state.botActive);
+      await sendControlCommand();
+    }
+
+    function setEngineVisuals(active) {
+      state.botActive = active;
+      const btn = document.getElementById('master-toggle-btn');
+      const text = document.getElementById('power-text');
+      const icon = document.getElementById('power-icon');
+
+      if (active) {
+        btn.className = "px-5 py-2 bg-emerald-600 text-white text-xs font-semibold tracking-wider uppercase hover:bg-emerald-500 transition duration-150 flex items-center space-x-2 rounded shadow-sm";
+        text.innerText = "TERMINATOR ACTIVE";
+        icon.className = "w-2 h-2 rounded-full bg-white animate-ping";
+      } else {
+        btn.className = "px-5 py-2 bg-slate-950 text-white text-xs font-semibold tracking-wider uppercase hover:bg-slate-800 transition duration-150 flex items-center space-x-2 rounded shadow-sm";
+        text.innerText = "START TERMINATOR";
+        icon.className = "w-2 h-2 rounded-full bg-slate-400";
+      }
+    }
+
+    async function authenticateBroker() {
+      if (!state.bridgeUrl) return alert("Please enter your Cloudflare Bridge URL first.");
+
+      const server = document.getElementById('broker-server').value;
+      const account = document.getElementById('account-id').value;
+      const password = document.getElementById('account-pass').value;
+
+      try {
+        const response = await fetch(`${state.bridgeUrl}/api/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ server, account, password })
+        });
+        const res = await response.json();
+        if (response.ok) {
+          document.getElementById('config-panel').classList.add('hidden');
+          syncStatus();
+        } else {
+          alert("Auth Failed: " + res.message);
+        }
+      } catch (err) {
+        alert("Bridge connection error.");
+      }
+    }
+
+    async function pushEAParameters() {
+      if (!state.bridgeUrl) return alert("Please enter your Cloudflare Bridge URL.");
+
+      const params = {
+        base_risk_pct: parseFloat(document.getElementById('input-risk-pct').value),
+        max_daily_loss_pct: parseFloat(document.getElementById('input-max-dd').value),
+        max_open_positions: parseInt(document.getElementById('input-max-positions').value),
+        max_spread_points: parseInt(document.getElementById('input-max-spread').value),
+        fib_extension: parseFloat(document.getElementById('input-fib-ext').value),
+        max_stagnant_bars: parseInt(document.getElementById('input-stagnant-bars').value)
+      };
+
+      try {
+        const response = await fetch(`${state.bridgeUrl}/api/params`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(params)
+        });
+        if (response.ok) {
+          alert("Parameters pushed directly to MQL5 bot!");
+        }
+      } catch (err) {
+        alert("Failed to push parameters.");
+      }
+    }
+
+    async function setRiskProfile(mode) {
+      state.riskMode = mode;
+      ['ultra', 'balanced', 'conservative'].forEach(m => {
+        const elem = document.getElementById(`mode-${m}`);
+        if (m === mode.toLowerCase().replace('_aggressive', '')) {
+          elem.className = "w-full p-3 rounded text-left border-2 border-slate-950 bg-slate-50 transition";
+        } else {
+          elem.className = "w-full p-3 rounded text-left border border-slate-200 hover:border-slate-400 transition";
+        }
+      });
+      await sendControlCommand();
+    }
+
+    function updatePairs() {
+      const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+      state.selectedPairs = Array.from(checkboxes).map(cb => cb.value);
+      sendControlCommand();
+    }
+
+    async function sendControlCommand() {
+      if (!state.bridgeUrl) return;
+      try {
+        await fetch(`${state.bridgeUrl}/api/control`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: state.botActive ? "START" : "STOP",
+            mode: state.riskMode,
+            pairs: state.selectedPairs
+          })
+        });
+        syncStatus();
+      } catch (err) {
+        console.error("Control command failed:", err);
+      }
+    }
+
+    function updateBadge(online, label) {
+      const dot = document.getElementById('ping-dot');
+      const text = document.getElementById('connection-status-text');
+      text.innerText = label;
+      dot.className = online ? "w-2 h-2 rounded-full bg-emerald-500" : "w-2 h-2 rounded-full bg-rose-500 animate-pulse";
+    }
+
+    function renderJournalTable(positions) {
+      const tbody = document.getElementById('journal-table-body');
+      if (!positions || positions.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-400 italic">No active trades open in MT5 terminal.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = positions.map(p => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3 font-bold">${p.ticket}</td>
+          <td class="p-3 font-bold">${p.symbol}</td>
+          <td class="p-3 font-bold ${p.type === 0 ? 'text-emerald-600' : 'text-rose-600'}">${p.type === 0 ? 'BUY' : 'SELL'}</td>
+          <td class="p-3">${p.volume}</td>
+          <td class="p-3">${p.price_open}</td>
+          <td class="p-3 text-slate-500">${p.sl || '-'}</td>
+          <td class="p-3 text-slate-500">${p.tp || '-'}</td>
+          <td class="p-3 text-right font-bold ${p.profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${p.profit >= 0 ? '+' : ''}$${p.profit.toFixed(2)}</td>
+        </tr>
+      `).join('');
+    }
+  </script>
+</body>
+</html>
